@@ -4,15 +4,15 @@ matplotlib.use('Agg')
 import os, os.path
 import json
 import jinja2
-import io
+import StringIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-from . import model
+import model
 try:
-	from . import View
-except ImportError:
+	import View
+except:
 	import view as View
 
 import cherrypy
@@ -145,7 +145,7 @@ class Root(object):
 		return buffer.getvalue()
 
 	def clean_args(self,args):
-		for k,v in args.items():
+		for k,v in args.iteritems():
 			# turn checkbox group string into a list
 			if v.rfind("__list__") == 0:
 				tmp = v.split(',')
@@ -217,7 +217,7 @@ class App:
 		returns: path to file or buffer to be downloaded (string or buffer)
 		"""
 		df = self.getData(params)
-		buffer = io.StringIO()
+		buffer = StringIO.StringIO()
 		df.to_csv(buffer, index=False)
 		filepath = buffer
 		return filepath

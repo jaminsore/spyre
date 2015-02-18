@@ -1,7 +1,12 @@
 from spyre import server
 
 import pandas as pd
-import urllib2
+
+try:
+	import urllib2
+except ImportError:
+	import urllib.request as urllib2
+
 import json
 
 class StockExample(server.App):
@@ -37,7 +42,8 @@ class StockExample(server.App):
 		# make call to yahoo finance api to get historical stock data
 		api_url = 'https://chartapi.finance.yahoo.com/instrument/1.0/{}/chartdata;type=quote;range=3m/json'.format(ticker)
 		result = urllib2.urlopen(api_url).read()
-		data = json.loads(result.replace('finance_charts_json_callback( ','')[:-1])  # strip away the javascript and load json
+		result = result.replace(b'finance_charts_json_callback( ', b'')[:-1]
+		data = json.loads(result.decode('utf-8'))  # strip away the javascript and load json
 		self.company_name = data['meta']['Company-Name']
 		df = pd.DataFrame.from_records(data['series'])
 		df['Date'] = pd.to_datetime(df['Date'],format='%Y%m%d')
