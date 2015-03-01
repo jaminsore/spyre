@@ -1,12 +1,15 @@
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import matplotlib
-import io
+# import matplotlib
+try:
+	import io
+except ImportError:
+	import StringIO as io
 
 class Plot:
 	def getPlotPath(self, plt_obj):
 		buffer = io.BytesIO()
-		if type(plt_obj).__name__ == 'Figure':
+		if isinstance(plt_obj, plt.Figure):
 			plt_obj.savefig(buffer,format='png',bbox_inches='tight')
 		else:
 			print("Error: getPlot method must return an pyplot figure object")

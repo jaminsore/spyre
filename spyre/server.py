@@ -1,19 +1,31 @@
 import matplotlib
 matplotlib.use('Agg')
 
-import os, os.path
+import os
 import json
 import jinja2
-import io
+
+try:
+	import io
+except ImportError:
+	import StringIO as io
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-from . import model
+try:
+	
+	from . import model
+except (ImportError, SystemError):
+	import model
+
 try:
 	from . import View
 except ImportError:
 	import view as View
+except SystemError:
+	import View
 
 import cherrypy
 from cherrypy.lib.static import serve_file
@@ -25,59 +37,22 @@ templateLoader = jinja2.FileSystemLoader( searchpath=ROOT_DIR )
 templateEnv = jinja2.Environment( loader=templateLoader )
 
 
-
 class Root(object):
-	def __init__(self,templateVars=None, title=None, inputs=None, outputs=None, controls=None, tabs=None, getJsonDataFunction=None, getDataFunction=None, getTableFunction=None, getPlotFunction=None, getImageFunction=None, getD3Function=None, getCustomCSSFunction=None, getCustomJSFunction=None, getHTMLFunction=None,  getDownloadFunction=None, noOutputFunction=None):
-		# populate template dictionary for creating input,controler, and output HTML and javascript
-		if templateVars is not None:
-			self.templateVars = templateVars
-		else:
-			self.templateVars = {}
-			if title is not None:
-				self.templateVars['title'] = title
-			if inputs is not None:
-				self.templateVars['inputs'] = inputs
-			if controls is not None:
-				self.templateVars['controls'] = controls
-			if outputs is not None:
-				self.templateVars['outputs'] = outputs
-			if tabs is not None:
-				self.templateVars['tabs'] = tabs
-
-		self.getJsonData = getJsonDataFunction
-		self.getData = getDataFunction
-		self.getTable = getTableFunction
-		self.getPlot = getPlotFunction
-		self.getImage = getImageFunction
-		self.getD3 = getD3Function
-		self.getCustomJS = getCustomJSFunction
-		self.getCustomCSS = getCustomCSSFunction
-		self.getHTML = getHTMLFunction
-		self.noOutput = noOutputFunction
-		self.getDownload = getDownloadFunction
-		d3 = self.getD3()
-		custom_js = self.getCustomJS()
-		custom_css = self.getCustomCSS()
-
-		self.templateVars['d3js'] = d3['js']
-		self.templateVars['d3css'] = d3['css']
-		self.templateVars['custom_js'] = custom_js
-		self.templateVars['custom_css'] = custom_css
-
-		v = View.View()
-		self.templateVars['js'] = v.getJS()
-		self.templateVars['css'] = v.getCSS()
+	
+	def __init__(self, app_instance):
+# 		app_instance = App
+		self._app = app_instance
 
 	@cherrypy.expose
 	def index(self):
 		v = View.View()
 		template = jinja2.Template(v.getHTML())
-		return template.render( self.templateVars )
+		return template.render( self._app.templateVars )
 
 	@cherrypy.expose
 	def plot(self, **args):
 		args = self.clean_args(args)
-		p = self.getPlot(args)
+		p = self._app.getPlot(args)
 		d = model.Plot()
 		buffer = d.getPlotPath(p)
 		cherrypy.response.headers['Content-Type'] = 'image/png'
@@ -86,7 +61,7 @@ class Root(object):
 	@cherrypy.expose
 	def image(self, **args):
 		args = self.clean_args(args)
-		img = self.getImage(args)
+		img = self._app.getImage(args)
 		d = model.Image()
 		buffer = d.getImagePath(img)
 		cherrypy.response.headers['Content-Type'] = 'image/jpg'
@@ -95,19 +70,17 @@ class Root(object):
 	@cherrypy.expose
 	def data(self, **args):
 		args = self.clean_args(args)
-		data = self.getJsonData(args)
+		data = self._app.getJsonData(args)
 		cherrypy.response.headers['Content-Type'] = 'application/json'
 		return json.dumps({'data':data,'args':args})
 
 	@cherrypy.expose
 	def table(self, **args):
 		args = self.clean_args(args)
-		df = self.getTable(args)
+		df = self._app.getTable(args)
 		html = df.to_html(index=False, escape=False)
-		i = 0
-		for col in df.columns:
+		for i, col in enumerate(df.columns):
 			html = html.replace('<th>{}'.format(col),'<th><a onclick="sortTable({},"table0");"><b>{}</b></a>'.format(i,col))
-			i += 1
 		html = html.replace('border="1" class="dataframe"','class="sortable" id="sortable"')
 		html = html.replace('style="text-align: right;"','')
 		cherrypy.response.headers['Content-Type'] = 'text/html'
@@ -116,7 +89,7 @@ class Root(object):
 	@cherrypy.expose
 	def html(self, **args):
 		args = self.clean_args(args)
-		html = self.getHTML(args)
+		html = self._app.getHTML(args)
 		cherrypy.response.headers['Content-Type'] = 'text/html'
 		return html
 
@@ -161,23 +134,49 @@ class Root(object):
 
 class App:
 
-	title = None
+	title = ''
 	inputs = [{		"input_type":'text',
 					"label": 'Variable', 
 					"value" : "Value Here",
 					"variable_name": 'var1'}]
 
-	controls = None
+	controls = []
 
 	outputs = [{	"output_type" : "plot",
 					"output_id" : "plot",
 					"control_id" : "button1",
 					"on_page_load" : "true"}]
-	outputs = None
-	inputs = None
-	tabs = None
-	templateVars = None
-				
+	outputs = []
+	inputs = []
+	tabs = []
+	templateVars = {}
+	
+	def __init__(self):
+		if self.title:
+			self.templateVars['title'] = self.title
+		if self.controls:
+			self.templateVars['controls'] = self.controls
+		if self.outputs:
+			self.templateVars['outputs'] = self.outputs
+		if self.inputs:
+			self.templateVars['inputs'] = self.inputs
+		if self.tabs:
+			self.templateVars['tabs'] = self.tabs
+			
+		d3 = self.getD3()
+		custom_js = self.getCustomJS()
+		custom_css = self.getCustomCSS()
+
+		self.templateVars['d3js'] = d3['js']
+		self.templateVars['d3css'] = d3['css']
+		self.templateVars['custom_js'] = custom_js
+		self.templateVars['custom_css'] = custom_css
+
+		v = View.View()
+		self.templateVars['js'] = v.getJS()
+		self.templateVars['css'] = v.getCSS()
+	
+	
 	def getJsonData(self, params):
 		"""turns the DataFrame returned by getData into a dictionary
 
@@ -273,10 +272,7 @@ class App:
 			pass
 
 	def getD3(self):
-		d3 = {}
-		d3['css'] = ""
-		d3['js'] = ""
-		return d3
+		return {'css' : '', 'js' : ''}
 
 	def getCustomJS(self):
 		"""Override this function
@@ -295,7 +291,7 @@ class App:
 		return ""
 
 	def launch(self,host="local",port=8080):
-		webapp = self.getRoot()
+		webapp = Root(self)
 		if host!="local":
 			cherrypy.server.socket_host = '0.0.0.0'
 		cherrypy.server.socket_port = port
@@ -310,9 +306,6 @@ class App:
 		jobs.new(self.launch, kw=dict(port=port))
 		return HTML('<iframe src=http://localhost:{} width={} height={}></iframe>'.format(port,width,height))
 
-	def getRoot(self):
-		webapp = Root(templateVars=self.templateVars, title=self.title, inputs=self.inputs, outputs=self.outputs, controls=self.controls, tabs=self.tabs, getJsonDataFunction=self.getJsonData, getDataFunction=self.getData, getTableFunction=self.getTable, getPlotFunction=self.getPlot, getImageFunction=self.getImage, getD3Function=self.getD3, getCustomJSFunction=self.getCustomJS, getCustomCSSFunction=self.getCustomCSS, getHTMLFunction=self.getHTML, getDownloadFunction=self.getDownload, noOutputFunction=self.noOutput)
-		return webapp
 
 class Launch(App):
 	"""Warning: This class is depricated. Use App instead"""
