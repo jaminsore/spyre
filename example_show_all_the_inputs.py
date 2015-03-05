@@ -1,3 +1,4 @@
+#!python3
 # from spyre import spyre
 # import spyre
 from spyre import server

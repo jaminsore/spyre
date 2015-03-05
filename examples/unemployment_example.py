@@ -14,20 +14,23 @@ from collections import OrderedDict
 
 class UnemploymentApp(server.App):
 	def __init__(self):
-		colors = ["#F1EEF6", "#D4B9DA", "#C994C7", "#DF65B0", "#DD1C77", "#980043"]
-		stuff = []
-		for key in us_counties.data:
-		    stuff.append( us_counties.data[key] )
-		shapes = pd.DataFrame(stuff, index=us_counties.data.keys())
-		unemp = pd.DataFrame(list(unemployment.data.values()),index=list(unemployment.data.keys()),columns=['rate'])
-		unemp['idx'] = (unemp['rate'] // 2).astype('i8')
-		unemp[unemp['idx']>5]=5
-		unemp['color'] = [colors[idx] for idx in unemp['idx'].tolist()]
-		data = unemp.join(shapes)
-		data['mlong'] = list(map(np.mean,data['lons']))
-		data['mlats'] = list(map(np.mean,data['lats']))
-		data = data[(data['mlong'] > -130) & (data['mlong'] < -65)]
-		data = data[(data['mlats'] > 25) & (data['mlats'] < 50)]
+		colors = np.array(["#F1EEF6", "#D4B9DA", "#C994C7", "#DF65B0", "#DD1C77", "#980043"])
+
+		data = pd.DataFrame(us_counties.data).T
+		data['rate'] = pd.Series(unemployment.data)
+		data.dropna(subset=['rate'], inplace=True)
+
+		data['idx'] = (data['rate'] // 2).astype('i8')
+		data.loc[data['idx'] > 5, 'idx'] = 5
+		data['color'] = colors[data['idx'].values]
+
+		data['mlong'] = data['lons'].map(np.mean)
+		data['mlats'] = data['lats'].map(np.mean)
+
+		mask = (data.mlong > -130) & (data.mlong < -65) &\
+			   (data.mlats > 25) & (data.mlats < 50)
+			
+		data = data[mask]
 		self.data = data
 
 	title = "US Unemployment"
@@ -50,7 +53,7 @@ class UnemploymentApp(server.App):
 		else:
 			data = self.data[self.data['state']==state]
 
-		TOOLS="pan,wheel_zoom,box_zoom,reset,hover,previewsave"
+		TOOLS="pan,wheel_zoom,box_zoom,reset,hover,previewsave,resize"
 
 		fig = figure(title=state.upper()+" Unemployment 2009", tools=TOOLS)
 		fig.patches(data['lons'], data['lats'], fill_color=data['color'], fill_alpha=0.7,  line_color="white", line_width=0.5, )

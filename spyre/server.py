@@ -43,11 +43,13 @@ class Root(object):
 # 		app_instance = App
 		self._app = app_instance
 
+
 	@cherrypy.expose
 	def index(self):
 		v = View.View()
 		template = jinja2.Template(v.getHTML())
 		return template.render( self._app.templateVars )
+
 
 	@cherrypy.expose
 	def plot(self, **args):
@@ -58,6 +60,7 @@ class Root(object):
 		cherrypy.response.headers['Content-Type'] = 'image/png'
 		return buffer.getvalue()
 
+
 	@cherrypy.expose
 	def image(self, **args):
 		args = self.clean_args(args)
@@ -67,12 +70,14 @@ class Root(object):
 		cherrypy.response.headers['Content-Type'] = 'image/jpg'
 		return buffer.getvalue()
 
+
 	@cherrypy.expose
 	def data(self, **args):
 		args = self.clean_args(args)
 		data = self._app.getJsonData(args)
 		cherrypy.response.headers['Content-Type'] = 'application/json'
 		return json.dumps({'data':data,'args':args})
+
 
 	@cherrypy.expose
 	def table(self, **args):
@@ -86,6 +91,7 @@ class Root(object):
 		cherrypy.response.headers['Content-Type'] = 'text/html'
 		return html
 
+
 	@cherrypy.expose
 	def html(self, **args):
 		args = self.clean_args(args)
@@ -93,10 +99,11 @@ class Root(object):
 		cherrypy.response.headers['Content-Type'] = 'text/html'
 		return html
 
+
 	@cherrypy.expose
 	def download(self, **args):
 		args = self.clean_args(args)
-		filepath = self.getDownload(args)
+		filepath = self._app.getDownload(args)
 		if type(filepath).__name__=="str":
 			return serve_file(filepath, "application/x-download", "attachment", name='data.csv')
 		if type(filepath).__name__=="instance":
@@ -104,11 +111,13 @@ class Root(object):
 		else:
 			return "error downloading file. filepath must be string of buffer"
 
+
 	@cherrypy.expose
 	def no_output(self, **args):
 		args = self.clean_args(args)
-		self.noOutput(args)
+		self._app.noOutput(args)
 		return ''
+
 
 	@cherrypy.expose
 	def spinning_wheel(self, **args):
@@ -116,6 +125,7 @@ class Root(object):
 		buffer = v.getSpinningWheel()
 		cherrypy.response.headers['Content-Type'] = 'image/gif'
 		return buffer.getvalue()
+
 
 	def clean_args(self,args):
 		for k,v in args.items():
