@@ -1,10 +1,7 @@
+from __future__ import print_function, absolute_import, division
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-# import matplotlib
-try:
-	import io
-except ImportError:
-	import StringIO as io
+import io
 
 class Plot:
 	def getPlotPath(self, plt_obj):

@@ -1,6 +1,4 @@
-#!python3
-# from spyre import spyre
-# import spyre
+from __future__ import absolute_import, print_function, division
 from spyre import server
 
 import matplotlib.pyplot as plt
@@ -8,6 +6,8 @@ import numpy as np
 import pandas as pd
 from numpy import pi
 import time
+import io
+
 
 class SimpleSineApp(server.App):
 	colors = [
@@ -36,8 +36,8 @@ class SimpleSineApp(server.App):
 			{	"input_type":'checkboxgroup',
 				"label": 'Axis Labels', 
 				"options" : [
-					{"label": "x-axis", "value":1, "checked":True}, 
-					{"label":"y-axis", "value":2}
+					{"label": "x-axis", "value":'x', "checked":True}, 
+					{"label":"y-axis", "value":'y'}
 				],
 				"variable_name": 'axis_label', 
 				"action_id" : "plot",
@@ -89,80 +89,46 @@ class SimpleSineApp(server.App):
 					"output_id" : "download_id",
 					"control_id" : "button2",
 				}]
-
-	def getPlot(self, params):
-		fig = plt.figure()  # make figure object
-		splt = fig.add_subplot(1,1,1)
-
-		f = float(params['freq'])
-		title = params['title']
-		axis_label = list(map( int, params['axis_label'] ))
-		color = params['color']
-		func_type = params['func_type']
-
-		x = np.arange(0,6*pi,pi/50)
-		splt.set_title(title)
-		for axis in axis_label:
-			if axis==1:
-				splt.set_xlabel('x axis')
-			if axis==2:
-				splt.set_ylabel('y axis')
-		if func_type=='cos':
-			y = np.cos(f*x)
-		else:
-			y = np.sin(f*x)
-		splt.plot(x,y,color=color)  # sine wave
-		return fig
-
-	# def getHTML(self,params):
-	# 	f = int(params['freq'])
-	# 	time.sleep(f)
-	# 	return "hello world"
 	
-	def plot(self):
+	
+	def plot(self, freq, title, axis_label, color, func_type, **params):
 		fig = plt.figure()  # make figure object
 		splt = fig.add_subplot(1,1,1)
-
-		f = float(params['freq'])
-		title = params['title']
-		axis_label = list(map( int, params['axis_label'] ))
-		color = params['color']
-		func_type = params['func_type']
-
+ 
+		f = float(freq)
+ 
 		x = np.arange(0,6*pi,pi/50)
 		splt.set_title(title)
 		for axis in axis_label:
-			if axis==1:
+			if axis=='x':
 				splt.set_xlabel('x axis')
-			if axis==2:
+			if axis=='y':
 				splt.set_ylabel('y axis')
-		if func_type=='cos':
-			y = np.cos(f*x)
-		else:
-			y = np.sin(f*x)
+				
+		y = getattr(np, func_type)(f * x)
 		splt.plot(x,y,color=color)  # sine wave
 		return fig
 
-	def plot2(self):
-		fig = plt.figure()  # make figure object
-		splt = fig.add_subplot(1,1,1)
-		x = np.arange(0,6*pi,pi/50)
-		y = np.sin(f*x)
-		splt.plot(x,y)  # sine wave
-		return fig
+	plot2 = plot
 
-	def html_id(self):
+	def html_id(self, **params):
 		return "hello world"
 
-	def getData(self,params):
+
+	def table_id(self, **params):
 		count = [1,4,3]
 		name = ['<a href="http://adamhajari.com">A</a>','B','C']
 		df = pd.DataFrame({'name':name, 'count':count})
 		time.sleep(2)
 		return df
+	
+	
+	def download_id(self, **params):
+		buffer = io.StringIO()
+		buffer.write(str(params))
+		return buffer
+	
 
-	def noOutput(self, input_params):
-		return 0
 
 app = SimpleSineApp()
-app.launch(port=9096)
+app.launch(port=8080)

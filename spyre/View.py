@@ -1,12 +1,13 @@
+from __future__ import print_function, absolute_import, division
 import os
 import codecs
 import io
 import sys
 import matplotlib.image as mpimg
-import imp
-imp.reload(sys)
+# import imp
+# imp.reload(sys)
 #sys.setdefaultencoding('utf-8')
-
+ENCODING = 'utf-8'
 class View:
 	def __init__(self):
 		self.ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +16,7 @@ class View:
 
 	def getHTML(self):
 		file_path = self.ROOT_DIR+'/view.html'
-		f = open(file_path)
+		f = codecs.open(file_path, 'r', ENCODING)
 		return f.read()
 
 	def getJS(self):
@@ -24,11 +25,8 @@ class View:
 			if file.find('.js')>0:
 				file_path = self.JS_PATH+file
 				print(file_path)
-				f = codecs.open(file_path)
-				content = f.read()
-				self.JS += content.decode('utf-8')
-				f = codecs.StreamReader(file_path)
-
+				with codecs.open(file_path, 'r', ENCODING) as f:
+					self.JS += f.read()
 				self.JS += "\n"
 		return self.JS
 
@@ -37,8 +35,8 @@ class View:
 		for file in os.listdir(self.CSS_PATH):
 			if file.find('.css')>0:
 				file_path = self.CSS_PATH+file
-				f = open(file_path)
-				self.CSS += f.read()
+				with codecs.open(file_path, 'r', ENCODING) as f:
+					self.CSS += f.read()
 				self.CSS += "\n"
 		return self.CSS
 
