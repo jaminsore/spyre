@@ -49,19 +49,14 @@ class Root(object):
 	def index(self):
 		html = self._app.view.getHTML()
 		template = jinja2.Template(html)
-		try:
-			return template.render( self._app.templateVars )
-		except UnicodeDecodeError:
-			print (html)
-			raise
+		return template.render( self._app.templateVars )
 
 
 	@cherrypy.expose
 	@clean_kwargs
 	def plot(self, output_id, **kwargs):
 		p = getattr(self._app, output_id)(**kwargs)
-		d = model.Plot()
-		buffer = d.getPlotPath(p)
+		buffer = model.get_plot_path(p)
 		cherrypy.response.headers['Content-Type'] = 'image/png'
 		return buffer.getvalue()
 
@@ -70,8 +65,7 @@ class Root(object):
 	@clean_kwargs
 	def image(self, output_id, **kwargs):
 		img = getattr(self._app, output_id)(**kwargs)
-		d = model.Image()
-		buffer = d.getImagePath(img)
+		buffer = model.get_image_path(img)
 		cherrypy.response.headers['Content-Type'] = 'image/jpg'
 		return buffer.getvalue()
 

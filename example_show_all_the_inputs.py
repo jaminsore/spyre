@@ -125,10 +125,15 @@ class SimpleSineApp(server.App):
 	
 	def download_id(self, **params):
 		buffer = io.StringIO()
-		buffer.write(str(params))
+		try:
+			par_str = unicode(str(params))
+		except NameError: #python3
+			par_str = str(params)
+		buffer.write(par_str)
+			
 		return buffer
 	
 
 
 app = SimpleSineApp()
-app.launch(port=8080)
+app.launch(port=9080)

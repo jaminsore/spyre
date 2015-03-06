@@ -2,23 +2,25 @@ from __future__ import print_function, absolute_import, division
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import io
+import numpy as np
 
-class Plot:
-	def getPlotPath(self, plt_obj):
-		buffer = io.BytesIO()
-		if isinstance(plt_obj, plt.Figure):
-			plt_obj.savefig(buffer,format='png',bbox_inches='tight')
-		else:
-			print("Error: getPlot method must return an pyplot figure object")
-		plt.close('all')
-		return(buffer)
+def get_plot_path(plt_obj):
+	buffer = io.BytesIO()
+	if isinstance(plt_obj, plt.Figure):
+		plt_obj.savefig(buffer,format='png',bbox_inches='tight')
+	else:
+		raise TypeError('"plt_obj" must be %s' % type(plt.Figure))
+	plt.close('all')
+	return buffer
 
-class Image:
-	def getImagePath(self, img_obj):
-		buffer = io.BytesIO()
-		mpimg.imsave(buffer,img_obj)
-		try:
-			mpimg.imsave(buffer,img_obj)
-		except:
-			print("Error: getImage method must return an image object")
-		return(buffer)
+
+def get_image_path(img_obj):
+	buffer = io.BytesIO()
+	mpimg.imsave(buffer,img_obj)
+	shape = np.shape(img_obj)
+	if any(len(shape) == 3 and shape[-1] != 3 or shape[-1] !=4,
+		   len(shape) < 2 or len(shape) > 3):
+		raise TypeError('"img_obj" must be an MxN (luminance),'
+						 'MxNx3 (RGB) or MxNx4 (RGBA) array')
+	mpimg.imsave(buffer,img_obj)
+	return buffer
