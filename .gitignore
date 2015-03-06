@@ -2,6 +2,7 @@
 *.whl
 *.egg
 *.tar.gz
+*.bak
 dist/*
 .metadata/*
 .project
