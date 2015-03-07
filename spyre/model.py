@@ -18,9 +18,10 @@ def get_image_path(img_obj):
 	buffer = io.BytesIO()
 	mpimg.imsave(buffer,img_obj)
 	shape = np.shape(img_obj)
-	if any(len(shape) == 3 and shape[-1] != 3 or shape[-1] !=4,
-		   len(shape) < 2 or len(shape) > 3):
+	if ((len(shape) == 3 and shape[-1] != 3 and shape[-1] !=4)  or
+		   (len(shape) < 2 or len(shape) > 3)):
 		raise TypeError('"img_obj" must be an MxN (luminance),'
-						 'MxNx3 (RGB) or MxNx4 (RGBA) array')
+						 'MxNx3 (RGB) or MxNx4 (RGBA) array, %s received' 
+						 % str(shape))
 	mpimg.imsave(buffer,img_obj)
 	return buffer
