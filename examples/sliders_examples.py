@@ -28,13 +28,11 @@ class SlidersApp(server.App):
 					"output_id" : "plot",
 					"on_page_load" : True }]
 
-	def getPlot(self, params):
-		f = float(params['freq'])
-		d = float(params['decay'])
+	def plot(self, freq, decay, **params):
 		x = np.arange(0,6*pi,pi/50)
-		y1 = np.sin(f*x/(2*pi))
-		y2 = np.exp(-x*d)
-		y3 = np.sin(f*x/(2*pi))*np.exp(-x*d)
+		y1 = np.sin(freq*x/(2*pi))
+		y2 = np.exp(-x*decay)
+		y3 = np.sin(freq*x/(2*pi))*np.exp(-x*decay)
 		fig = plt.figure()
 		splt1 = fig.add_subplot(3,1,1)
 		splt1.plot(x,y1)  # sine wave

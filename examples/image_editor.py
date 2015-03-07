@@ -11,50 +11,46 @@ class ImageEditor(server.App):
 					"value": 0.1,
 					"max": 10,
 					"step":0.1,
-					"action_id":"image"},
+					"action_id":"getImage"},
 				{"input_type": "slider",
 					"variable_name": "red",
 					"label": "red",
 					"value": 1,
 					"max": 1,
 					"step":0.1,
-					"action_id":"image"},
+					"action_id":"getImage"},
 				{"input_type": "slider",
 					"variable_name": "green",
 					"label": "green",
 					"value": 1,
 					"max": 1,
 					"step":0.1,
-					"action_id":"image"},
+					"action_id":"getImage"},
 				{"input_type": "slider",
 					"variable_name": "blue",
 					"label": "blue",
 					"value": 1,
 					"max": 1,
 					"step":0.1,
-					"action_id":"image"}]
+					"action_id":"getImage"}]
 
 	controls = [{"control_type":"hidden",
 					"control_id":"render",
 					"label":"render"}]
 
 	outputs = [{"output_type":"image",
-					"output_id":"image",
+					"output_id":"getImage",
 					"control_id":"render",
-					"on_page_load":"true"}]
+					"on_page_load":True}]
 
-	def getImage(self,params):
-		sigma = float(params['sigma'])
-		r = float(params['red'])
-		g = float(params['green'])
-		b = float(params['blue'])
+	def getImage(self, sigma, red, green, blue, **params):
 		image = data.coffee()
 		new_image = filter.gaussian_filter(image, sigma=sigma, multichannel=True)
-		new_image[:,:,0] = r*new_image[:,:,0]
-		new_image[:,:,1] = g*new_image[:,:,1]
-		new_image[:,:,2] = b*new_image[:,:,2]
+		new_image[:,:,0] = red*new_image[:,:,0]
+		new_image[:,:,1] = green*new_image[:,:,1]
+		new_image[:,:,2] = blue*new_image[:,:,2]
 		return new_image
 
 
 app = ImageEditor()
-app.launch(port=9096)
+app.launch(port=9000)

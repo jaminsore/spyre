@@ -37,8 +37,7 @@ class StockExample(server.App):
 					"tab" : "Table",
 					"on_page_load" : True }]
 
-	def getData(self, params):
-		ticker = params['ticker']
+	def table_id(self, ticker, **params):
 		# make call to yahoo finance api to get historical stock data
 		api_url = 'https://chartapi.finance.yahoo.com/instrument/1.0/{}/chartdata;type=quote;range=3m/json'.format(ticker)
 		result = urllib2.urlopen(api_url).read()
@@ -49,8 +48,8 @@ class StockExample(server.App):
 		df['Date'] = pd.to_datetime(df['Date'],format='%Y%m%d')
 		return df
 
-	def getPlot(self, params):
-		df = self.getData(params)
+	def plot(self, **params):
+		df = self.table_id(**params)
 		plt_obj = df.set_index('Date').drop(['volume'],axis=1).plot()
 		plt_obj.set_ylabel("Price")
 		plt_obj.set_title(self.company_name)

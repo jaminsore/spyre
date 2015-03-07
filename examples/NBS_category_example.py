@@ -44,24 +44,16 @@ class NBSCategoriesApp(server.App):
 
 	tabs = ["Plot1", "Plot2", "Table", "text"]
 
-	def getData(self, params):
-		# cache values within the Launch object to avoid reloading the data each time
-		ex_first = int(params['ex_first'])
+	def getData(self, ex_first, **params):
+		ex_first = int(ex_first)
 		count = [620716,71294,50807,7834,5237,3278,2533,2042,1266,1165,980,962,747,712,679]
 		name = ['Musician','Author','Book','Record Label','Actor','Public Figure ','Comedian','Producer','News/Media','Entertainer','Radio Station ','TV Show','Company','Local Business','Apparel']
 		df = pd.DataFrame({'name':name, 'count':count})
 		df = df[['name','count']]
 		return df[ex_first:]
-
-	def getPlot(self, params):
-		output_id = params['output_id']
-		data = self.getData(params)  # get data
-		if output_id=="plot1":
-			return self.getPlot1(data)
-		else:
-			return self.getPlot2(data)
-
-	def getPlot1(self, data):
+	
+	def plot1(self, **params):
+		data = self.getData(**params)
 		fig = plt.figure()  # make figure object
 		splt = fig.add_subplot(1,1,1)
 		ind = np.arange(len(data['name']))
@@ -75,7 +67,8 @@ class NBSCategoriesApp(server.App):
 		fig.autofmt_xdate(rotation=45)
 		return fig
 
-	def getPlot2(self, data):
+	def plot2(self, **params):
+		data = self.getData(**params)
 		fig = plt.figure()  # make figure object
 		splt = fig.add_subplot(1,1,1)
 		ind = np.arange(len(data['name']))
@@ -88,8 +81,12 @@ class NBSCategoriesApp(server.App):
 		splt.set_xticklabels(data['name'].tolist())
 		fig.autofmt_xdate(rotation=45)
 		return fig
-
-	def getHTML(self, params):
+	
+	def table_id(self, **params):
+		return self.getData(**params)
+		
+		
+	def custom_html(self, **params):
 		return "<b>App Description: </b> <i>This</i> is where you could describe your app."
 
 app = NBSCategoriesApp()

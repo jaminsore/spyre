@@ -14,11 +14,10 @@ class SimpleSineApp(server.App):
 				"output_id":"sine_wave_plot",
 				"on_page_load":True }]
 
-	def getPlot(self, params):
-		f = float(params['freq'])
-		print (f)
+	def sine_wave_plot(self, freq, **params):
+		freq = float(freq)
 		x = np.arange(0,2*np.pi,np.pi/150)
-		y = np.sin(f*x)
+		y = np.sin(freq*x)
 		fig = plt.figure()
 		splt1 = fig.add_subplot(1,1,1)
 		splt1.plot(x,y)

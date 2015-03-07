@@ -12,42 +12,66 @@ from bokeh.plotting import *
 from collections import OrderedDict
 
 
+def load_data():
+	colors = np.array(["#F1EEF6", "#D4B9DA", "#C994C7", 
+					   "#DF65B0", "#DD1C77", "#980043"])
+
+	data = pd.DataFrame(us_counties.data).T
+	data['rate'] = pd.Series(unemployment.data)
+	data.dropna(subset=['rate'], inplace=True)
+
+	data['idx'] = (data['rate'] // 2).astype('i8')
+	data.loc[data['idx'] > 5, 'idx'] = 5
+	data['color'] = colors[data['idx'].values]
+
+	data['mlong'] = data['lons'].map(np.mean)
+	data['mlats'] = data['lats'].map(np.mean)
+
+	mask = (data.mlong > -130) & (data.mlong < -65) &\
+		   (data.mlats > 25) & (data.mlats < 50)
+		
+	data = data[mask]
+	return data
+
+
+def make_options(data):
+	options = [{"label": "all", "value":"all"}]
+	states = pd.unique(data['state'].dropna())
+	states.sort()
+	states_opts = [{"label": x.upper(), "value":x} for x in states.tolist()]
+	options.extend(states_opts)
+	return options
+
+
 class UnemploymentApp(server.App):
-	def __init__(self):
-		colors = np.array(["#F1EEF6", "#D4B9DA", "#C994C7", "#DF65B0", "#DD1C77", "#980043"])
-
-		data = pd.DataFrame(us_counties.data).T
-		data['rate'] = pd.Series(unemployment.data)
-		data.dropna(subset=['rate'], inplace=True)
-
-		data['idx'] = (data['rate'] // 2).astype('i8')
-		data.loc[data['idx'] > 5, 'idx'] = 5
-		data['color'] = colors[data['idx'].values]
-
-		data['mlong'] = data['lons'].map(np.mean)
-		data['mlats'] = data['lats'].map(np.mean)
-
-		mask = (data.mlong > -130) & (data.mlong < -65) &\
-			   (data.mlats > 25) & (data.mlats < 50)
-			
-		data = data[mask]
-		self.data = data
-
+	
 	title = "US Unemployment"
 
 	controls = [{"control_type" : "hidden",
-					"label" : "get historical stock prices",
-					"control_id" : "update_data" 
+				 "label" : "get historical stock prices",
+				 "control_id" : "update_data" 
 				}]
 
 	outputs = [{"output_type" : "html",
-					"output_id" : "html_id",
-					"control_id" : "update_data",
-					"on_page_load" : True
-				}]
-
-	def getHTML(self,params):
-		state = params['state']
+				"output_id" : "html_id",
+				 "control_id" : "update_data",
+				 "on_page_load" : True}]
+	
+	data = load_data()
+	
+	inputs = [{	"input_type":'dropdown',
+				"label": 'State',
+				"options" : make_options(data),
+				"variable_name": 'state', 
+				"action_id": "update_data"
+			}]
+	
+	
+	def __init__(self, custom_js=INLINE.js_raw[0], custom_css=INLINE.css_raw[0]):
+		server.App.__init__(self, custom_css=custom_css, custom_js=custom_js)
+	
+	
+	def html_id(self, state, **params):
 		if state=='all':
 			data = self.data
 		else:
@@ -67,23 +91,6 @@ class UnemploymentApp(server.App):
 		html = "%s\n%s"%(script, div)
 		return html
 
-	def getCustomJS(self):
-		return INLINE.js_raw[0]
-
-	def getCustomCSS(self):
-		return INLINE.css_raw[0]
-
 app = UnemploymentApp()
 
-states = pd.unique(app.data['state'].dropna())
-states.sort()
-options = [{"label": "all", "value":"all"}]
-states_opts = [{"label": x.upper(), "value":x} for x in states.tolist()]
-options.extend( states_opts )
-app.inputs = [{	"input_type":'dropdown',
-				"label": 'State', 
-				"options" : options,
-				"variable_name": 'state', 
-				"action_id": "update_data"
-			}]
 app.launch(port=9097)
